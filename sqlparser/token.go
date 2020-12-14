@@ -191,6 +191,7 @@ var keywords = map[string]int{
 	"group_concat":        GROUP_CONCAT,
 	"gtid":                GTID,
 	"hash":                HASH,
+	"hash2":               HASH2,
 	"having":              HAVING,
 	"high_priority":       UNUSED,
 	"hour_microsecond":    UNUSED,

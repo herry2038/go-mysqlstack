@@ -24,6 +24,23 @@ import (
 	"github.com/xelabs/go-mysqlstack/sqlparser/depends/sqltypes"
 )
 
+func TestNewParsedQuery2(t *testing.T) {
+	stmt, err := Parse("CREATE TABLE t1(id int, age int) PARTITION BY HASH2(id);")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	ddl, ok := stmt.(*DDL)
+	if !ok {
+		t.Errorf("Is not ddl!")
+	}
+
+	if ddl.PartitionOption.PartitionType() != "partitiontablehash2" {
+		t.Errorf("Is partition type is not partitionhash2!")
+	}
+
+}
+
 func TestNewParsedQuery(t *testing.T) {
 	stmt, err := Parse("select * from a where id =:id")
 	if err != nil {

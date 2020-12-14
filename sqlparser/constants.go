@@ -63,6 +63,7 @@ const (
 	SingleTableType         = "singletable"
 	GlobalTableType         = "globaltable"
 	PartitionTableHash      = "partitiontablehash"
+	PartitionTableHash2     = "partitiontablehash2"
 	NormalTableType         = "normaltable"
 	PartitionTableList      = "partitiontablelist"
 

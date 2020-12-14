@@ -155,6 +155,7 @@ func forceEOF(yylex interface{}) {
 	CONSTRAINT
 	FULLTEXT
 	HASH
+	HASH2
 	INDEXES
 	KEY_BLOCK_SIZE
 	KEYS
@@ -1257,6 +1258,13 @@ partition_option:
 			PartitionNum: $7,
 		}
 	}
+| 	PARTITION BY HASH2 openb col_id closeb parts_num_opt
+    {
+    	$$ = &PartOptHash2{
+    		Name: $5.String(),
+    		PartitionNum: $7,
+    	}
+    }
 
 index_using_str:
 	HASH

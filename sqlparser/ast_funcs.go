@@ -354,6 +354,11 @@ type (
 		Name         string
 		PartitionNum *SQLVal
 	}
+
+	PartOptHash2 struct {
+		Name         string
+		PartitionNum *SQLVal
+	}
 )
 
 // PartitionType return the partition type.
@@ -379,6 +384,10 @@ func (*PartOptList) PartitionType() string {
 // PartitionType return the partition type.
 func (*PartOptHash) PartitionType() string {
 	return PartitionTableHash
+}
+
+func (*PartOptHash2) PartitionType() string {
+	return PartitionTableHash2
 }
 
 // TableOption represents the table options.
