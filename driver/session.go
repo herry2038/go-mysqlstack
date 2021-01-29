@@ -24,6 +24,13 @@ import (
 	"github.com/xelabs/go-mysqlstack/sqlparser/depends/sqltypes"
 )
 
+type MODE int
+
+const (
+	MODE_CONSISTENCY = 0
+	MODE_RWS         = 1
+)
+
 // Session is a client connection with greeting and auth.
 type Session struct {
 	id            uint32
@@ -32,11 +39,24 @@ type Session struct {
 	conn          net.Conn
 	schema        string
 	auth          *proto.Auth
+	mode          MODE
 	packets       *packet.Packets
 	greeting      *proto.Greeting
 	lastQueryTime time.Time
 	statementID   uint32                // used to identify different statements for the same session.
 	statements    map[uint32]*Statement // Save the metadata of the session related to the prepare operation.
+}
+
+func NewSession(log *xlog.Log, ID uint32, serverVersion string, conn net.Conn) *Session {
+	return newSession(log, ID, serverVersion, conn)
+}
+
+func (s *Session) SetMode(mode MODE) {
+	s.mode = mode
+}
+
+func (s *Session) Mode() MODE {
+	return s.mode
 }
 
 func newSession(log *xlog.Log, ID uint32, serverVersion string, conn net.Conn) *Session {
