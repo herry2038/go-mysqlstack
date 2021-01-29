@@ -54,6 +54,10 @@ func (a *Auth) User() string {
 	return a.user
 }
 
+func (a *Auth) SetUser(user string) {
+	a.user = user
+}
+
 // AuthResponse returns the auth response.
 func (a *Auth) AuthResponse() []byte {
 	return a.authResponse

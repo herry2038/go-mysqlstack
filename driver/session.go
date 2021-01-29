@@ -55,6 +55,10 @@ func (s *Session) SetMode(mode MODE) {
 	s.mode = mode
 }
 
+func (s *Session) SetUser(user string) {
+	s.auth.SetUser(user)
+}
+
 func (s *Session) Mode() MODE {
 	return s.mode
 }
