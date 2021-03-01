@@ -18,8 +18,8 @@ import (
 
 func main() {
 	log := xlog.NewStdLog(xlog.Level(xlog.INFO))
-	address := fmt.Sprintf(":4407")
-	client, err := driver.NewConn("mock", "mock", address, "", "")
+	address := fmt.Sprintf("herrypc:3306")
+	client, err := driver.NewConn("myshard", "myshard", address, "", "")
 	if err != nil {
 		log.Panic("client.new.connection.error:%+v", err)
 	}

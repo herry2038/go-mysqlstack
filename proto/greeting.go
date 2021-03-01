@@ -213,8 +213,10 @@ func (g *Greeting) UnPack(payload []byte) error {
 
 	// string[NUL]    auth-plugin name
 	if (g.Capability & sqldb.CLIENT_PLUGIN_AUTH) > 0 {
-		if g.authPluginName, err = buf.ReadStringNUL(); err != nil {
+		if bytes, err := buf.ReadBytes(int(SLEN)); err != nil {
 			return sqldb.NewSQLError(sqldb.ER_MALFORMED_PACKET, "extracting greeting auth-plugin-name failed")
+		} else {
+			g.authPluginName = string(bytes)
 		}
 	}
 	return nil
