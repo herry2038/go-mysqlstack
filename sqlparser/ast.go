@@ -17,6 +17,7 @@ limitations under the License.
 package sqlparser
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/xelabs/go-mysqlstack/sqlparser/depends/sqltypes"
@@ -46,6 +47,14 @@ type (
 		SQLNode
 	}
 
+	OutFile struct {
+		OutString      string
+		FieldEscape    byte
+		FieldTerminate byte
+		FieldEnclosed  byte
+		LineTerminate  byte
+	}
+
 	// Select represents a SELECT statement.
 	Select struct {
 		Cache       string
@@ -53,6 +62,7 @@ type (
 		Distinct    string
 		Hints       string
 		SelectExprs SelectExprs
+		OutFile     *OutFile
 		From        TableExprs
 		Where       *Where
 		GroupBy     GroupBy
@@ -770,11 +780,19 @@ type TableIdent struct {
 
 // Format formats the node.
 func (node *Select) Format(buf *TrackedBuffer) {
-	buf.Myprintf("select %v%s%s%s%v from %v%v%v%v%v%v%s",
-		node.Comments, node.Cache, node.Distinct, node.Hints, node.SelectExprs,
-		node.From, node.Where,
-		node.GroupBy, node.Having, node.OrderBy,
-		node.Limit, node.Lock)
+	if node.OutFile == nil {
+		buf.Myprintf("select %v%s%s%s%v from %v%v%v%v%v%v%s",
+			node.Comments, node.Cache, node.Distinct, node.Hints, node.SelectExprs,
+			node.From, node.Where,
+			node.GroupBy, node.Having, node.OrderBy,
+			node.Limit, node.Lock)
+	} else {
+		buf.Myprintf("select %v%s%s%s%v %v from %v%v%v%v%v%v%s",
+			node.Comments, node.Cache, node.Distinct, node.Hints, node.SelectExprs, node.OutFile,
+			node.From, node.Where,
+			node.GroupBy, node.Having, node.OrderBy,
+			node.Limit, node.Lock)
+	}
 }
 
 // AddOrder adds an order by element
@@ -1938,4 +1956,22 @@ func (node *Transaction) Format(buf *TrackedBuffer) {
 // Format formats the node.
 func (node *Xa) Format(buf *TrackedBuffer) {
 	buf.WriteString("XA")
+}
+
+func encodeCharToString(c byte) string {
+	if encodedChar := sqltypes.SQLEncodeMap[c]; encodedChar == sqltypes.DontEscape {
+		return string([]byte{c})
+	} else {
+		return string([]byte{'\\', encodedChar})
+	}
+}
+
+func (node *OutFile) Format(buf *TrackedBuffer) {
+	buf.Myprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+		node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+}
+
+func (node *OutFile) String() string {
+	return fmt.Sprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+		node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
 }

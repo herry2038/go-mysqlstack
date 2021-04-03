@@ -114,6 +114,7 @@ func forceEOF(yylex interface{}) {
 	partitionDefinitions  []*PartitionDefinition
 	partitionOption       PartitionOption
 	showFilter            *ShowFilter
+	outFile               *OutFile
 }
 
 %token LEX_ERROR
@@ -586,6 +587,14 @@ func forceEOF(yylex interface{}) {
 	RECOVER
 	REBALANCE
 
+// OutFile Tokens
+%token  <bytes>
+    LINES
+    ENCLOSED
+    TERMINATED
+    ESCAPED
+    OUTFILE
+
 %type	<statement>
 	command
 
@@ -1015,6 +1024,14 @@ func forceEOF(yylex interface{}) {
 %type	<partitionOption>
 	partition_option
 
+%type   <outFile>
+    opt_out_file
+
+%type   <str>
+    opt_field_escaped_by
+    opt_terminated_by
+    opt_line_terminated_by
+
 
 %start	any_command
 
@@ -1076,10 +1093,53 @@ select_statement:
 
 // base_select is an unparenthesized SELECT with no order by clause or beyond.
 base_select:
-	SELECT comment_opt cache_opt distinct_opt straight_join_opt select_expression_list from_opt where_expression_opt group_by_opt having_opt
+	SELECT comment_opt cache_opt distinct_opt straight_join_opt select_expression_list opt_out_file from_opt where_expression_opt group_by_opt having_opt
 	{
-		$$ = &Select{Comments: Comments($2), Cache: $3, Distinct: $4, Hints: $5, SelectExprs: $6, From: $7, Where: NewWhere(WhereStr, $8), GroupBy: GroupBy($9), Having: NewWhere(HavingStr, $10)}
+		$$ = &Select{Comments: Comments($2), Cache: $3, Distinct: $4, Hints: $5, SelectExprs: $6, OutFile: $7, From: $8, Where: NewWhere(WhereStr, $9), GroupBy: GroupBy($10), Having: NewWhere(HavingStr, $11)}
 	}
+
+opt_out_file:
+    {
+        $$ = nil
+    }
+|   INTO OUTFILE  STRING opt_field_escaped_by opt_terminated_by opt_line_terminated_by
+    {
+        fe := byte('"')
+        if len($4) > 0 {
+            fe = []byte($4)[0]
+        }
+        ft := byte(',')
+        if len($5) > 0 {
+            ft = []byte($5)[0]
+        }
+        if len($5) > 1 {
+            fe = []byte($5)[1]
+        }
+        lt := byte('\n')
+        if len($6) > 0 {
+            lt = []byte($6)[0]
+        }
+        $$ = &OutFile{OutString: string($3), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: fe, LineTerminate: lt}
+    }
+
+opt_field_escaped_by: { $$ = "\"" }
+|   FIELDS ESCAPED BY STRING { $$ = string($4) }
+
+opt_terminated_by: { $$ = ",\"" }
+|   TERMINATED BY STRING ENCLOSED BY STRING {
+        ft := byte(',')
+        if len($3) > 0 {
+           ft = $3[0]
+        }
+        fe := byte('"')
+        if len($6) > 0 {
+           fe = $6[0]
+        }
+        $$ = string([]byte{ft, fe})
+    }
+
+opt_line_terminated_by: { $$ = "\n" }
+|   LINES TERMINATED BY STRING { $$ = string($4) }
 
 union_lhs:
 	select_statement

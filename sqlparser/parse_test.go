@@ -17,9 +17,23 @@ limitations under the License.
 package sqlparser
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
+
+func TestValid2(t *testing.T) {
+	input := "select * into outfile 'a' from test"
+	tree, err := Parse(input)
+	if err != nil {
+		t.Errorf("input: %s, err: %v", input, err)
+		return
+	}
+	out := String(tree)
+
+	fmt.Println(out)
+
+}
 
 func TestValid(t *testing.T) {
 	validSQL := []struct {
