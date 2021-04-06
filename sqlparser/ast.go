@@ -53,6 +53,7 @@ type (
 		FieldTerminate byte
 		FieldEnclosed  byte
 		LineTerminate  byte
+		IsLocal        bool
 	}
 
 	// Select represents a SELECT statement.
@@ -1967,11 +1968,21 @@ func encodeCharToString(c byte) string {
 }
 
 func (node *OutFile) Format(buf *TrackedBuffer) {
-	buf.Myprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-		node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	if node.IsLocal {
+		buf.Myprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	} else {
+		buf.Myprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	}
 }
 
 func (node *OutFile) String() string {
-	return fmt.Sprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-		node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	if node.IsLocal {
+		return fmt.Sprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	} else {
+		return fmt.Sprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
+			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	}
 }
