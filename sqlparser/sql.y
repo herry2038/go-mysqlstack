@@ -135,6 +135,8 @@ func forceEOF(yylex interface{}) {
 	LIMIT
 	OFFSET
 	FOR
+	LOAD
+	INFILE
 
 
 %type   <bytes>
@@ -609,6 +611,7 @@ func forceEOF(yylex interface{}) {
 	update_statement
 	delete_statement
 	set_statement
+	load_statement
 
 %type	<statement>
 	create_statement
@@ -827,6 +830,7 @@ func forceEOF(yylex interface{}) {
 	exists_opt
 	not_exists_opt
 	temporary_opt
+	ignore_or_replace_opt
 
 %type	<empty>
 	non_rename_operation
@@ -1072,6 +1076,7 @@ command:
 |	transaction_statement
 |	radon_statement
 |	other_statement
+|   load_statement
 
 select_statement:
 	base_select order_by_opt limit_opt lock_opt
@@ -1104,7 +1109,7 @@ opt_out_file:
     }
 |   INTO OUTFILE  STRING opt_field_escaped_by opt_terminated_by opt_line_terminated_by
     {
-        fe := byte('"')
+        fe := byte('\\')
         if len($4) > 0 {
             fe = []byte($4)[0]
         }
@@ -1112,26 +1117,27 @@ opt_out_file:
         if len($5) > 0 {
             ft = []byte($5)[0]
         }
+        feClose := byte(0)
         if len($5) > 1 {
-            fe = []byte($5)[1]
+            feClose = []byte($5)[1]
         }
         lt := byte('\n')
         if len($6) > 0 {
             lt = []byte($6)[0]
         }
-        $$ = &OutFile{OutString: string($3), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: fe, LineTerminate: lt}
+        $$ = &OutFile{OutString: string($3), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: feClose, LineTerminate: lt}
     }
 
 opt_field_escaped_by: { $$ = "\"" }
 |   FIELDS ESCAPED BY STRING { $$ = string($4) }
 
-opt_terminated_by: { $$ = ",\"" }
+opt_terminated_by: { $$ = "," }
 |   TERMINATED BY STRING ENCLOSED BY STRING {
         ft := byte(',')
         if len($3) > 0 {
            ft = $3[0]
         }
-        fe := byte('"')
+        fe := byte(0)
         if len($6) > 0 {
            fe = $6[0]
         }
@@ -1215,6 +1221,30 @@ set_statement:
 	{
 		$$ = &Set{Comments: Comments($2), Exprs: $3}
 	}
+
+load_statement:
+    LOAD DATA LOCAL INFILE STRING ignore_or_replace_opt INTO TABLE table_name opt_field_escaped_by opt_terminated_by opt_line_terminated_by
+    {
+            fe := byte('"')
+            if len($10) > 0 {
+                fe = []byte($10)[0]
+            }
+            ft := byte(',')
+            if len($11) > 0 {
+                ft = []byte($11)[0]
+            }
+            fEnclose := byte(0)
+            if len($11) > 1 {
+                fEnclose = []byte($11)[1]
+            }
+            lt := byte('\n')
+            if len($12) > 0 {
+                lt = []byte($12)[0]
+            }
+            outFile := &OutFile{OutString: string($5), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: fEnclose, LineTerminate: lt}
+
+        $$ = &Load{Table: $9, OutFile: outFile, IgnoreOrReplace: $6}
+    }
 
 partition_definitions:
 	partition_definition
@@ -4570,6 +4600,10 @@ ignore_opt:
 	{
 		$$ = IgnoreStr
 	}
+
+ignore_or_replace_opt:   { $$ = byte(0) }
+| IGNORE { $$ = byte(1) }
+| REPLACE { $$ = byte(2) }
 
 non_rename_operation:
 	ALTER

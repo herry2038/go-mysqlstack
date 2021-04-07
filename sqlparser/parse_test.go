@@ -32,7 +32,18 @@ func TestValid2(t *testing.T) {
 	out := String(tree)
 
 	fmt.Println(out)
+}
 
+func TestValid3(t *testing.T) {
+	input := "load data local infile 'a' into table tbl"
+	tree, err := Parse(input)
+	if err != nil {
+		t.Errorf("input: %s, err: %v", input, err)
+		return
+	}
+	out := String(tree)
+
+	fmt.Println(out)
 }
 
 func TestValid(t *testing.T) {

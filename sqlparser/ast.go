@@ -159,6 +159,12 @@ type (
 		ModifyColumnDef *ColumnDefinition
 	}
 
+	Load struct {
+		Table           TableName
+		OutFile         *OutFile
+		IgnoreOrReplace byte // 0 - 正常 1 - ingore 2 - update
+	}
+
 	// Show represents a show statement.
 	Show struct {
 		Type     string
@@ -241,6 +247,7 @@ func (*Xa) iStatement()          {}
 func (*Select) iSelectStatement()      {}
 func (*Union) iSelectStatement()       {}
 func (*ParenSelect) iSelectStatement() {}
+func (*Load) iStatement()              {}
 
 type (
 	// InsertRows represents the rows for an INSERT statement.
@@ -1968,21 +1975,33 @@ func encodeCharToString(c byte) string {
 }
 
 func (node *OutFile) Format(buf *TrackedBuffer) {
+	encloseBy := ""
+	if node.FieldEnclosed > 0 {
+		encloseBy = fmt.Sprintf(" ENCLOSED BY '%s'", encodeCharToString(node.FieldEnclosed))
+	}
 	if node.IsLocal {
-		buf.Myprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+		buf.Myprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s'%s LINES TERMINATED BY '%s'",
+			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encloseBy, encodeCharToString(node.LineTerminate))
 	} else {
-		buf.Myprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+		buf.Myprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s'%s LINES TERMINATED BY '%s'",
+			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encloseBy, encodeCharToString(node.LineTerminate))
 	}
 }
 
 func (node *OutFile) String() string {
-	if node.IsLocal {
-		return fmt.Sprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
-	} else {
-		return fmt.Sprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s' ENCLOSED BY '%s' LINES TERMINATED BY '%s'",
-			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encodeCharToString(node.FieldEnclosed), encodeCharToString(node.LineTerminate))
+	encloseBy := ""
+	if node.FieldEnclosed > 0 {
+		encloseBy = fmt.Sprintf(" ENCLOSED BY '%s'", encodeCharToString(node.FieldEnclosed))
 	}
+	if node.IsLocal {
+		return fmt.Sprintf("INTO LOCALFILE FIELDS ESCAPED BY '%s' TERMINATED BY '%s'%s LINES TERMINATED BY '%s'",
+			encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encloseBy, encodeCharToString(node.LineTerminate))
+	} else {
+		return fmt.Sprintf("INTO OUTFILE '%s' FIELDS ESCAPED BY '%s' TERMINATED BY '%s'%s LINES TERMINATED BY '%s'",
+			node.OutString, encodeCharToString(node.FieldEscape), encodeCharToString(node.FieldTerminate), encloseBy, encodeCharToString(node.LineTerminate))
+	}
+}
+
+func (node *Load) Format(buf *TrackedBuffer) {
+
 }
