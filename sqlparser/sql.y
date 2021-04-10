@@ -1223,27 +1223,27 @@ set_statement:
 	}
 
 load_statement:
-    LOAD DATA LOCAL INFILE STRING ignore_or_replace_opt INTO TABLE table_name opt_field_escaped_by opt_terminated_by opt_line_terminated_by
+    LOAD DATA INFILE STRING ignore_or_replace_opt INTO TABLE table_name opt_field_escaped_by opt_terminated_by opt_line_terminated_by
     {
             fe := byte('"')
-            if len($10) > 0 {
-                fe = []byte($10)[0]
+            if len($9) > 0 {
+                fe = []byte($9)[0]
             }
             ft := byte(',')
-            if len($11) > 0 {
-                ft = []byte($11)[0]
+            if len($10) > 0 {
+                ft = []byte($10)[0]
             }
             fEnclose := byte(0)
-            if len($11) > 1 {
-                fEnclose = []byte($11)[1]
+            if len($10) > 1 {
+                fEnclose = []byte($10)[1]
             }
             lt := byte('\n')
-            if len($12) > 0 {
-                lt = []byte($12)[0]
+            if len($11) > 0 {
+                lt = []byte($11)[0]
             }
-            outFile := &OutFile{OutString: string($5), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: fEnclose, LineTerminate: lt}
+            outFile := &OutFile{OutString: string($4), FieldEscape: fe, FieldTerminate: ft, FieldEnclosed: fEnclose, LineTerminate: lt}
 
-        $$ = &Load{Table: $9, OutFile: outFile, IgnoreOrReplace: $6}
+        $$ = &Load{Table: $8, OutFile: outFile, IgnoreOrReplace: $5}
     }
 
 partition_definitions:
